@@ -1,29 +1,29 @@
 package com.example.nummo
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
-import com.example.nummo.R
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     val userBalance = "2,090,960 BAM"
+    val greenColor = Color(0xFF4CAF50)
 
     val transactions = listOf(
         Triple("Sent to John", "-1,500 BAM", "Today"),
@@ -36,7 +36,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         Triple("Bob", "1,200 BAM", "Group trip share")
     )
 
-    Surface(color = Color(0xFFF0F0F0)) { // Light gray background
+    Surface(color = Color(0xFFF8F8F8)) {
         LazyColumn(
             modifier = modifier
                 .fillMaxSize()
@@ -55,8 +55,18 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             }
 
             item {
-                Text("Balance", style = MaterialTheme.typography.titleMedium)
-                Text(userBalance, style = MaterialTheme.typography.headlineMedium)
+                // No margin, no elevation, no spacing, directly under image
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF4CAF50)) // solid green
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Column {
+                        Text("Balance", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        Text("2,090,960 BAM", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("Transaction History", style = MaterialTheme.typography.titleMedium)
@@ -81,7 +91,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                             Text(desc)
                             Text(date, style = MaterialTheme.typography.bodySmall)
                         }
-                        Text(amount, color = if (amount.startsWith("+")) Color(0xFF4CAF50) else Color.Red)
+                        Text(amount, color = if (amount.startsWith("+")) greenColor else Color.Red)
                     }
                 }
             }
@@ -112,7 +122,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                         }
                         Button(
                             onClick = { /* TODO */ },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                            colors = ButtonDefaults.buttonColors(containerColor = greenColor)
                         ) {
                             Text("Pay")
                         }
@@ -120,35 +130,5 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun NummoBottomBar() {
-    NavigationBar {
-        NavigationBarItem(
-            selected = true,
-            onClick = {},
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            label = { Text("Home") }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {},
-            icon = { Icon(Icons.Default.Send, contentDescription = "Send") },
-            label = { Text("Send") }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {},
-            icon = { Icon(Icons.Default.AttachMoney, contentDescription = "Request") }, // Replace icon if needed
-            label = { Text("Request") }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {},
-            icon = { Icon(Icons.Default.AccountCircle, contentDescription = "Profile") },
-            label = { Text("Profile") }
-        )
     }
 }

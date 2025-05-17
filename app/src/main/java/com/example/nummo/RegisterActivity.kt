@@ -1,6 +1,8 @@
 package com.example.nummo
 
+import android.util.Patterns
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,80 +11,210 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.text.withStyle
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
 @Composable
-fun registerActivity(onBackToLogin: () -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var surname by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
+fun registerActivity(
+    onBackToLogin: () -> Unit,
+    viewModel: AuthViewModel = viewModel()
+) {
     val context = LocalContext.current
+
+    val name = viewModel.name
+    val surname = viewModel.surname
+    val username = viewModel.username
+    val dob = viewModel.dob
+    val email = viewModel.email // ✅ FIXED: Correct property name
+    val password = viewModel.password // ✅ FIXED: Correct property name
+
+    val nameError = viewModel.nameError
+    val surnameError = viewModel.surnameError
+    val usernameError = viewModel.usernameError
+    val dobError = viewModel.dobError
+    val emailError = viewModel.emailError
+    val passwordError = viewModel.passwordError
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Nummo", fontSize = 25.sp)
-        Spacer(modifier = Modifier.height(20.dp))
-
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("First Name") })
-        OutlinedTextField(value = surname, onValueChange = { surname = it }, label = { Text("Last Name") })
-        OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") })
-        OutlinedTextField(value = dob, onValueChange = { dob = it }, label = { Text("Date of Birth (yyyy-MM-dd)") })
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation()
+        Image(
+            painter = painterResource(id = R.drawable.nummo_logo),
+            contentDescription = "Nummo Logo",
+            modifier = Modifier.height(100.dp).padding(bottom = 16.dp)
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = Color(0xFF006400), fontWeight = FontWeight.Bold)) { append("Num") }
+                withStyle(SpanStyle(color = Color(0xFF66BB6A), fontWeight = FontWeight.Bold)) { append("mo") }
+            },
+            fontSize = 32.sp, modifier = Modifier.padding(bottom = 24.dp)
+        )
 
-        Button(onClick = {
-            try {
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                val birthDate = LocalDate.parse(dob, formatter)
-                val age = Period.between(birthDate, LocalDate.now()).years
+        val fieldModifier = Modifier.fillMaxWidth()
 
-                if (age < 18) {
-                    Toast.makeText(context, "You must be at least 18 years old to register", Toast.LENGTH_SHORT).show()
-                    return@Button
+        @Composable
+        fun ErrorText(error: String) {
+            if (error.isNotEmpty()) Text(error, color = Color.Red, fontSize = 12.sp)
+        }
+
+        OutlinedTextField(
+            value = name.value,
+            onValueChange = {
+                name.value = it
+                nameError.value = if (it.isBlank()) "First name is required."
+                else if (!it.all(Char::isLetter)) "Only letters allowed." else ""
+            },
+            label = { Text("First Name") },
+            modifier = fieldModifier,
+            colors = greenFieldColors()
+        )
+        ErrorText(nameError.value)
+
+        OutlinedTextField(
+            value = surname.value,
+            onValueChange = {
+                surname.value = it
+                surnameError.value = if (it.isBlank()) "Last name is required."
+                else if (!it.all(Char::isLetter)) "Only letters allowed." else ""
+            },
+            label = { Text("Last Name") },
+            modifier = fieldModifier,
+            colors = greenFieldColors()
+        )
+        ErrorText(surnameError.value)
+
+        OutlinedTextField(
+            value = username.value,
+            onValueChange = {
+                username.value = it
+                usernameError.value = if (it.length < 4) "Username must be at least 4 characters." else ""
+            },
+            label = { Text("Username") },
+            modifier = fieldModifier,
+            colors = greenFieldColors()
+        )
+        ErrorText(usernameError.value)
+
+        OutlinedTextField(
+            value = dob.value,
+            onValueChange = {
+                dob.value = it
+                dobError.value = try {
+                    val birthDate = LocalDate.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                    if (Period.between(birthDate, LocalDate.now()).years < 18) "Must be at least 18 years old." else ""
+                } catch (e: Exception) {
+                    "Format must be yyyy-MM-dd"
                 }
+            },
+            label = { Text("Date of Birth (yyyy-MM-dd)") },
+            modifier = fieldModifier,
+            colors = greenFieldColors()
+        )
+        ErrorText(dobError.value)
 
-                if (password.length >= 4) {
+        OutlinedTextField(
+            value = email.value,
+            onValueChange = {
+                email.value = it
+                emailError.value = if (!Patterns.EMAIL_ADDRESS.matcher(it).matches()) "Invalid email format." else ""
+            },
+            label = { Text("Email") },
+            modifier = fieldModifier,
+            colors = greenFieldColors()
+        )
+        ErrorText(emailError.value)
+
+        OutlinedTextField(
+            value = password.value,
+            onValueChange = {
+                password.value = it
+                passwordError.value = if (it.length < 7) "Password must be at least 7 characters." else ""
+            },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = fieldModifier,
+            colors = greenFieldColors()
+        )
+        ErrorText(passwordError.value)
+
+        PasswordStrengthMeter(password.value)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (viewModel.validateRegisterFields()) { // ✅ FIXED: Correct method call
                     Toast.makeText(context, "Registered successfully", Toast.LENGTH_SHORT).show()
                     onBackToLogin()
                 } else {
-                    Toast.makeText(context, "Password must be at least 4 characters", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Please fix the errors", Toast.LENGTH_SHORT).show()
                 }
-
-            } catch (e: DateTimeParseException) {
-                Toast.makeText(context, "Invalid date format. Use yyyy-MM-dd", Toast.LENGTH_SHORT).show()
-            }
-        }) {
-            Text("Register!")
+            },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+        ) {
+            Text("Register!", style = MaterialTheme.typography.labelLarge.copy(color = Color.White))
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
         TextButton(onClick = onBackToLogin) {
-            Text("Already have an account? Log In")
+            Text("Already have an account? Log In", color = Color(0xFF2E7D32))
         }
     }
 }
+
+@Composable
+fun greenFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = Color(0xFF006400),
+    unfocusedBorderColor = Color(0xFF66BB6A),
+    focusedLabelColor = Color(0xFF006400)
+)
+
+@Composable
+fun PasswordStrengthMeter(password: String) {
+    val strength = when {
+        password.length < 7 && password.isNotEmpty() -> "Weak"
+        password.any { it.isDigit() } && password.any { it.isUpperCase() } && password.length >= 10 -> "Strong"
+        password.length >= 7 -> "Medium"
+        else -> ""
+    }
+
+    val color = when (strength) {
+        "Weak" -> Color.Red
+        "Medium" -> Color(0xFFFFA000)
+        "Strong" -> Color(0xFF2E7D32)
+        else -> Color.Transparent
+    }
+
+    if (strength.isNotEmpty()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Strength: $strength", color = color, fontSize = 12.sp)
+        }
+    }
+}
+
